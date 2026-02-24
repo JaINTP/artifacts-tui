@@ -1,5 +1,11 @@
 # Sentient Artifacts TUI
 
+![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white)
+![Version](https://img.shields.io/badge/version-0.2.0-green)
+![Textual](https://img.shields.io/badge/built%20with-Textual-blueviolet)
+![License](https://img.shields.io/badge/license-MIT-orange)
+![Artifacts MMO](https://img.shields.io/badge/game-Artifacts%20MMO-crimson)
+
 A real-time terminal dashboard for [Artifacts MMO](https://artifactsmmo.com),
 built with [Textual](https://textual.textualize.io/).
 
@@ -7,6 +13,20 @@ The bot that drives my swarm is private, but **you don't need it**.
 The TUI ships with an **Official API mode** that connects directly to the
 Artifacts MMO API using your game token - giving you a live, view-only TUI
 dashboard for all your characters.
+
+## Screenshots
+
+### Bot Manager Mode
+
+Full control with action queues, crafting demand panel, and bot commands.
+
+![Bot Manager Mode](assets/Screenshot_25-02-2026_05-22-05.png)
+
+### Official API Mode (View-Only)
+
+Compact cards with live WebSocket events — no bot manager required.
+
+![Official API Mode](assets/Screenshot_25-02-2026_05-22-30.png)
 
 ## Features
 
