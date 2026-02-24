@@ -1,6 +1,6 @@
 [project]
 name = "sentient-artifacts-tui"
-version = "0.1.0"
+version = "0.2.0"
 description = "Textual TUI for the Sentient Artifacts bot swarm"
 readme = "README.md"
 requires-python = ">=3.12"
