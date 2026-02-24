@@ -1,0 +1,286 @@
+/* Theme for Sentient Artifacts TUI */
+
+Screen {
+    background: $background;
+    color: $foreground;
+}
+
+Header {
+    dock: top;
+    height: 3;
+    background: $surface;
+    color: $primary;
+    content-align: center middle;
+    border-bottom: solid $primary;
+}
+
+Footer {
+    dock: bottom;
+    height: 1;
+    background: $surface;
+    color: $secondary;
+}
+
+/* Layout */
+#main-container {
+    layout: vertical;
+    height: 1fr;
+    padding: 0 1;
+}
+
+#top-section {
+    height: 1fr;
+    width: 100%;
+    layout: grid;
+    grid-gutter: 1 1;
+    align: center top;
+    padding: 1 0;
+}
+
+#top-section.layout-dense {
+    grid-size: 5 1;
+    grid-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-rows: 1fr;
+}
+
+#top-section.layout-balanced {
+    grid-size: 3 2;
+    grid-columns: 1fr 1fr 1fr;
+    grid-rows: 1fr 1fr;
+}
+
+#top-section.layout-focus {
+    grid-size: 2 3;
+    grid-columns: 1fr 1fr;
+    grid-rows: 1fr 1fr 1fr;
+}
+
+#bottom-section {
+    layout: horizontal;
+    height: 30;
+    width: 100%;
+    border-top: solid $primary;
+}
+
+#bottom-section.layout-dense {
+    height: 30;
+}
+
+#bottom-section.layout-balanced {
+    height: 30;
+}
+
+#bottom-section.layout-focus {
+    height: 12;
+}
+
+/* Character Card Styling */
+CharacterCard {
+    width: 1fr;
+    height: 1fr;
+    min-height: 29;
+    border: round $surface-lighten-1;
+    margin: 0;
+    background: $panel;
+    padding: 0 1;
+}
+
+.card-body {
+    width: 100%;
+    height: 100%;
+}
+
+CharacterCard:hover {
+    border: round $success;
+}
+
+#top-section.layout-dense CharacterCard {
+    min-height: 27;
+}
+
+#top-section.layout-focus CharacterCard {
+    min-height: 31;
+}
+
+.card-title {
+    content-align: center middle;
+    text-style: bold;
+    color: $accent;
+    background: $surface-darken-1;
+    width: 100%;
+    height: 2;
+}
+
+.stat-bar-label {
+    color: $foreground;
+    margin-top: 0;
+    width: 100%;
+}
+
+.sprite-slot {
+    width: 100%;
+    height: 5;
+    align: left middle;
+    margin: 0 0 1 0;
+}
+
+.sprite-stack {
+    /* Prevent collapse next to the 1fr name label in Horizontal layout. */
+    width: 7;
+    min-width: 7;
+    height: 5;
+    align: center middle;
+}
+
+.sprite-image {
+    height: 5;
+    width: auto;
+}
+
+.sprite-fallback {
+    height: 5;
+    width: auto;
+    content-align: center middle;
+}
+
+.card-title-inline {
+    color: $accent;
+    text-style: bold;
+    content-align: left middle;
+    padding: 0 1;
+    width: 1fr;
+    height: 5;
+}
+
+.hp-bar {
+    width: 100%;
+    min-width: 1;
+    height: 1;
+}
+
+.xp-bar {
+    width: 100%;
+    min-width: 1;
+    height: 1;
+}
+
+.cooldown-display {
+    content-align: center middle;
+    width: 100%;
+    color: $warning;
+    text-style: bold;
+    padding: 0;
+}
+
+.section-header {
+    color: $secondary;
+    margin-top: 0;
+    text-style: bold;
+    width: 100%;
+}
+
+.queue-eta {
+    color: $primary;
+    text-style: bold;
+    margin-bottom: 1;
+    width: 100%;
+}
+
+.task-section {
+    height: auto;
+    border-top: dashed $surface-lighten-1;
+    border-bottom: dashed $surface-lighten-1;
+    padding: 1 0;
+    margin: 1 0;
+}
+
+/* Scrollable task list container */
+.task-scroll-container {
+    /* height: 6; */
+    min-height: 5;
+    width: 100%;
+    border: round $surface-lighten-1;
+    background: $background-darken-1;
+    padding: 0 1;
+    overflow-y: auto;
+    scrollbar-color: $secondary;
+    scrollbar-background: $surface-darken-1;
+}
+
+#top-section.layout-dense .task-scroll-container {
+    min-height: 5;
+}
+
+#top-section.layout-balanced .task-scroll-container {
+    min-height: 6;
+}
+
+#top-section.layout-focus .task-scroll-container {
+    min-height: 7;
+}
+
+.task-list-content {
+    color: $foreground;
+    height: auto;
+    width: 100%;
+}
+
+.current-task {
+    color: $success;
+}
+
+.current-task-bottom {
+    color: $success;
+    background: $surface-darken-1;
+    content-align: center middle;
+    text-style: bold;
+    padding: 0 1;
+    border: round $success;
+    height: 3;
+    min-height: 3;
+    width: 100%;
+}
+
+.queued-task {
+    color: $foreground;
+}
+
+.last-message {
+    color: $secondary;
+    text-style: italic;
+    height: 2;
+    min-height: 2;
+    border: round $secondary-darken-2;
+    padding: 0 1;
+    content-align: left middle;
+    width: 100%;
+}
+
+/* Log Console Styling */
+LogConsole {
+    width: 2fr;
+    height: 1fr;
+    background: $background-darken-1;
+    border: none;
+    padding: 0 1;
+    color: $foreground;
+    scrollbar-color: $primary;
+    scrollbar-background: $surface-darken-1;
+}
+
+#demand-panel {
+    width: 2fr;
+    min-width: 30;
+    height: 1fr;
+    border-left: solid $secondary-darken-2;
+    background: $panel;
+    color: $foreground;
+    padding: 0;
+    overflow-y: auto;
+    scrollbar-color: $primary;
+    scrollbar-background: $surface-darken-1;
+}
+
+.hidden {
+    display: none;
+}
