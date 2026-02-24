@@ -39,3 +39,8 @@ ignore = ["E501", "D203", "D205", "D212", "D400", "D401", "D415"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[dependency-groups]
+dev = [
+    "pip>=26.0.1",
+]
