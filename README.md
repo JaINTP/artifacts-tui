@@ -111,6 +111,23 @@ uv run sentient-tui --url http://localhost:8765
 | `0` | Reset panel height |
 | `q` | Quit |
 
+## Sprite Rendering
+
+Character sprites are rendered directly in the terminal using
+[textual-image](https://github.com/lnqs/textual-image). The library
+auto-detects the best rendering protocol available:
+
+| Protocol | Quality | Supported Terminals |
+|---|---|---|
+| **Kitty TGP** | Best | Kitty, Konsole, WezTerm |
+| **Sixel** | Good | iTerm2, foot, WezTerm, Konsole, VS Code, Windows Terminal, xterm, Black Box |
+| **Half-cell Unicode** | Fallback | All terminals (automatic fallback) |
+
+> [!TIP]
+> For the best sprite quality, use a terminal that supports the Kitty
+> graphics protocol or Sixel. GNOME Terminal and Warp do not currently
+> support either protocol and will use the Unicode fallback.
+
 ## Development
 
 ```bash
