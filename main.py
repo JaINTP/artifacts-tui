@@ -47,7 +47,13 @@ def main() -> None:
     args = parser.parse_args()
 
     token = args.token or os.environ.get("ARTIFACTS_TOKEN")
-    url = args.url
+    url = args.url or os.environ.get("BOT_MANAGER_URL")
+
+    # Prefer bot manager URL over token when both are available,
+    # since the bot manager provides commands, swarm demand, etc.
+    # Official API token is the fallback for view-only mode.
+    if url:
+        token = None  # Don't use token when bot manager is available
 
     if not url and not token:
         print("No Bot Manager URL or Game Token provided.")

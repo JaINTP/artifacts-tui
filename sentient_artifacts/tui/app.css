@@ -102,6 +102,10 @@ CharacterCard:hover {
     min-height: 31;
 }
 
+CharacterCard.view-only {
+    min-height: 18;
+}
+
 .card-title {
     content-align: center middle;
     text-style: bold;
@@ -126,8 +130,8 @@ CharacterCard:hover {
 
 .sprite-stack {
     /* Prevent collapse next to the 1fr name label in Horizontal layout. */
-    width: 7;
-    min-width: 7;
+    width: 9;
+    min-width: 9;
     height: 5;
     align: center middle;
 }
@@ -248,8 +252,8 @@ CharacterCard:hover {
 .last-message {
     color: $secondary;
     text-style: italic;
-    height: 2;
-    min-height: 2;
+    height: 3;
+    min-height: 3;
     border: round $secondary-darken-2;
     padding: 0 1;
     content-align: left middle;

@@ -61,10 +61,14 @@ class TUI(App):
     CUSTOM_THEME_NAME = "artifacts-dark"
     DEFAULT_THEME_NAME = "textual-dark"
     LAYOUT_MODES = (
+        ("dense", "Dense 5-Column"),
         ("auto", "Auto (Responsive)"),
         ("balanced", "Balanced 3-Column"),
-        ("dense", "Dense 5-Column"),
         ("focus", "Focus 2-Column"),
+    )
+    VIEW_ONLY_LAYOUT_MODES = (
+        ("dense", "Dense 5-Column"),
+        ("auto", "Auto (Responsive)"),
     )
     LAYOUT_GRIDS = {
         "balanced": (3, 2),
@@ -93,7 +97,14 @@ class TUI(App):
     LOG_POLL_INTERVAL = 0.75
 
     def __init__(self, bot_manager: BotManagerProtocol | None = None, **kwargs):
-        """Initialize the TUI with an optional bot manager."""
+        """Initialize the TUI with an optional bot manager.
+
+        Args:
+            bot_manager: Protocol-compliant manager for bot interaction.
+                When the manager exposes ``view_only=True``, bot-manager-only
+                features (demand panel, action queues, commands) are disabled.
+            **kwargs: Forwarded to the ``App`` base class.
+        """
         super().__init__(**kwargs)
         self.bot_manager = bot_manager
         self.cards: list[CharacterCard] = []
@@ -106,7 +117,6 @@ class TUI(App):
             "Baker_Street",
         ]
         self.default_skins = ["men1", "men2", "women1", "men3", "women2"]
-        # Start in responsive mode for better scaling.
         self.layout_mode_index = 0
         self._state_poll_inflight = False
         self._logs_poll_inflight = False
@@ -125,6 +135,11 @@ class TUI(App):
         self._bottom_height_override: int | None = None
         self._log_visible = True
         self._demand_visible = True
+        self._view_only = bool(
+            bot_manager and getattr(bot_manager, "view_only", False)
+        )
+        if self._view_only:
+            self._demand_visible = False
         self._register_custom_themes()
         self.theme = self.CUSTOM_THEME_NAME
 
@@ -168,11 +183,15 @@ class TUI(App):
 
         with Container(id="main-container"):
             with Grid(id="top-section"):
+                show_queue = not self._view_only
+                card_classes = "view-only" if self._view_only else ""
                 for i in range(len(names)):
                     card = CharacterCard(
                         character_name=names[i],
                         skin_id=skins[i] if i < len(skins) else "men1",
+                        show_queue=show_queue,
                         id=f"card-{i}",
+                        classes=card_classes,
                     )
                     self.cards.append(card)
                     self.cards_by_name[names[i]] = card
@@ -198,7 +217,8 @@ class TUI(App):
         
         # Start state polling (fallback for sparse events)
         self.set_interval(self.STATE_POLL_INTERVAL, self.poll_bot_states)
-        self.set_interval(self.DEMAND_POLL_INTERVAL, self.poll_swarm_demand)
+        if not self._view_only:
+            self.set_interval(self.DEMAND_POLL_INTERVAL, self.poll_swarm_demand)
         
         # Start log polling for client mode (server mode uses direct listener)
         if hasattr(self.bot_manager, 'poll_logs'):
@@ -211,7 +231,8 @@ class TUI(App):
         if self.bot_manager:
             self.bot_manager.add_log_listener(self.on_bot_log)
             self.bot_manager.add_state_listener(self.on_bot_state)
-            self.log_widget.log_event("CONNECTED TO BOT MANAGER. SYNCING...", "success")
+            mode_label = "VIEW-ONLY (Official API)" if self._view_only else "BOT MANAGER"
+            self.log_widget.log_event(f"CONNECTED: {mode_label}. SYNCING...", "success")
 
     def _is_remote_client_mode(self) -> bool:
         """True when manager is HTTP client backed (blocking network calls)."""
@@ -340,6 +361,8 @@ class TUI(App):
 
     def action_toggle_demand(self) -> None:
         """Toggle the visibility of the demand panel."""
+        if self._view_only:
+            return
         self._demand_visible = not self._demand_visible
         self._apply_demand_visibility()
         self._apply_bottom_visibility()
@@ -371,17 +394,34 @@ class TUI(App):
         if hasattr(self, "log_widget"):
             self.log_widget.log_event(f"Theme switched to {self.theme}", "info")
 
+    @property
+    def _available_layouts(self) -> tuple:
+        """Return the layout mode tuple appropriate for the current client.
+
+        View-only mode restricts to single-row layouts (dense, auto) since
+        compact cards without action queues clip in multi-row grids.
+        """
+        if self._view_only:
+            return self.VIEW_ONLY_LAYOUT_MODES
+        return self.LAYOUT_MODES
+
     def action_cycle_layout(self) -> None:
         """Cycle between readability-focused dashboard layouts."""
-        self.layout_mode_index = (self.layout_mode_index + 1) % len(self.LAYOUT_MODES)
+        self.layout_mode_index = (self.layout_mode_index + 1) % len(self._available_layouts)
         self._apply_layout_mode()
 
     def _current_layout_key(self) -> str:
         """Return the active layout key."""
-        return self.LAYOUT_MODES[self.layout_mode_index][0]
+        layouts = self._available_layouts
+        idx = self.layout_mode_index % len(layouts)
+        return layouts[idx][0]
 
     def _apply_layout_mode(self, notify: bool = True) -> None:
-        """Apply CSS classes for the selected layout mode."""
+        """Apply CSS classes and grid dimensions for the active layout.
+
+        Args:
+            notify: When ``True``, log the layout change to the console.
+        """
         if not hasattr(self, "top_section") or not hasattr(self, "bottom_section"):
             return
 
@@ -389,7 +429,9 @@ class TUI(App):
             self.top_section.remove_class(cls)
             self.bottom_section.remove_class(cls)
 
-        mode_key, mode_label = self.LAYOUT_MODES[self.layout_mode_index]
+        layouts = self._available_layouts
+        idx = self.layout_mode_index % len(layouts)
+        mode_key, mode_label = layouts[idx]
         if mode_key != "auto":
             css_class = f"layout-{mode_key}"
             self.top_section.add_class(css_class)
@@ -428,7 +470,7 @@ class TUI(App):
 
         gutter = self.GRID_GUTTER
         min_width = self.CARD_MIN_WIDTH
-        min_height = self.CARD_MIN_HEIGHT
+        min_height = 18 if self._view_only else self.CARD_MIN_HEIGHT
 
         max_cols_by_width = max(
             1,
@@ -532,6 +574,8 @@ class TUI(App):
 
     def action_log_wider(self) -> None:
         """Increase log panel width and shrink demand panel."""
+        if self._view_only:
+            return
         max_log = self._split_total_units - self._split_min_units
         if self._log_width_units >= max_log:
             return
@@ -540,6 +584,8 @@ class TUI(App):
 
     def action_log_narrower(self) -> None:
         """Decrease log panel width and widen demand panel."""
+        if self._view_only:
+            return
         if self._log_width_units <= self._split_min_units:
             return
         self._log_width_units -= 1
@@ -547,6 +593,8 @@ class TUI(App):
 
     def action_reset_log_split(self) -> None:
         """Reset the log/demand split to the default ratio."""
+        if self._view_only:
+            return
         self._log_width_units = self._default_log_width_units
         self._apply_bottom_split()
 

@@ -51,12 +51,23 @@ class CharacterCard(Static):
         self,
         character_name: str,
         skin_id: str = "men1",
+        show_queue: bool = True,
         **kwargs: Any,
     ) -> None:
-        """Initialize card state, helpers, and cached render fields."""
+        """Initialize card state, helpers, and cached render fields.
+
+        Args:
+            character_name: Display name for this character.
+            skin_id: Sprite skin identifier used for the avatar graphic.
+            show_queue: When ``False``, the ACTION QUEUE section is hidden.
+                Set to ``False`` in view-only mode where queue data is
+                unavailable.
+            **kwargs: Forwarded to the ``Static`` base class.
+        """
         super().__init__(**kwargs)
         self.character_name = character_name
         self.skin_id = self._normalize_skin_id(skin_id) or "men1"
+        self.show_queue = show_queue
         self.sprite_image: object | None = None
         self.sprite_stack: Horizontal | None = None
         self._last_hp_raw = ""
@@ -154,15 +165,16 @@ class CharacterCard(Static):
             self.cooldown_label = Label("Ready", classes="cooldown-display")
             yield self.cooldown_label
 
-            yield Label("[bold yellow]ACTION QUEUE[/]", classes="section-header")
-            self.queue_eta_label = Label("ETA: -", classes="queue-eta")
-            yield self.queue_eta_label
-            with ScrollableContainer(classes="task-scroll-container"):
-                self.task_list_display = Static(
-                    "No actions queued.",
-                    classes="task-list-content",
-                )
-                yield self.task_list_display
+            if self.show_queue:
+                yield Label("[bold yellow]ACTION QUEUE[/]", classes="section-header")
+                self.queue_eta_label = Label("ETA: -", classes="queue-eta")
+                yield self.queue_eta_label
+                with ScrollableContainer(classes="task-scroll-container"):
+                    self.task_list_display = Static(
+                        "No actions queued.",
+                        classes="task-list-content",
+                    )
+                    yield self.task_list_display
 
             yield Label("[bold cyan]SIGNAL[/]", classes="section-header")
             self.msg_label = Static(self.last_msg, classes="last-message")
