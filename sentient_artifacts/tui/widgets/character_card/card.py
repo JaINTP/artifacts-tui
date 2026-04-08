@@ -46,6 +46,7 @@ class CharacterCard(Static):
     queue_eta_seconds = reactive(None)
     queue_eta_known_actions = reactive(0)
     queue_eta_total_actions = reactive(0)
+    character_name = reactive("Unknown")
 
     def __init__(
         self,
@@ -65,8 +66,8 @@ class CharacterCard(Static):
             **kwargs: Forwarded to the ``Static`` base class.
         """
         super().__init__(**kwargs)
-        self.character_name = character_name
         self.skin_id = self._normalize_skin_id(skin_id) or "men1"
+        self.character_name = character_name
         self.show_queue = show_queue
         self.sprite_image: object | None = None
         self.sprite_stack: Horizontal | None = None
@@ -138,10 +139,13 @@ class CharacterCard(Static):
             with Horizontal(classes="sprite-slot"):
                 with Horizontal(
                     classes="sprite-stack",
-                    id=f"sprite-stack-{self.character_name}",
+                    id="sprite-stack",
                 ) as sprite_stack:
                     self.sprite_stack = sprite_stack
-                yield Label(self.character_name, classes="card-title-inline")
+                self.name_label = Label(
+                    self.character_name, classes="card-title-inline"
+                )
+                yield self.name_label
 
             self.hp_stat_label = Label("HP 100%", classes="stat-bar-label")
             yield self.hp_stat_label
@@ -203,7 +207,7 @@ class CharacterCard(Static):
         if self.sprite_stack is not None:
             return self.sprite_stack
         try:
-            stack = self.query_one(f"#sprite-stack-{self.character_name}", Horizontal)
+            stack = self.query_one("#sprite-stack", Horizontal)
         except Exception:
             return None
         self.sprite_stack = stack
@@ -243,6 +247,11 @@ class CharacterCard(Static):
             return
         content = self._task_formatter.format(self.mission_queue, self.task_queue)
         self.task_list_display.update(content)
+
+    def watch_character_name(self, value: str) -> None:
+        """Update the name label when character changes."""
+        if hasattr(self, "name_label"):
+            self.name_label.update(value)
 
     def watch_last_msg(self, value: str) -> None:
         """Update the signal display when a new message arrives."""

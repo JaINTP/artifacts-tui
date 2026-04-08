@@ -10,6 +10,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, Grid
 from textual.theme import Theme
 from textual.widgets import Footer, Header
+
 from sentient_artifacts.tui.widgets.character_card import CharacterCard
 from sentient_artifacts.tui.widgets.crafting_demand_panel import CraftingDemandPanel
 from sentient_artifacts.tui.widgets.log_console import LogConsole
@@ -53,6 +54,7 @@ class BotManagerProtocol(Protocol):
     def get_swarm_demand_snapshot(self) -> dict[str, Any]:
         """Return the current swarm demand snapshot."""
         ...
+
 
 class TUI(App):
     """TUI Dashboard for the Artifacts MMORPG bot swarm."""
@@ -109,13 +111,7 @@ class TUI(App):
         self.bot_manager = bot_manager
         self.cards: list[CharacterCard] = []
         self.cards_by_name: dict[str, CharacterCard] = {}
-        self.default_names = [
-            "Atlas_Core",
-            "Ignis_Prime",
-            "Aqua_Flow",
-            "Viper_Mix",
-            "Baker_Street",
-        ]
+
         self.default_skins = ["men1", "men2", "women1", "men3", "women2"]
         self.layout_mode_index = 0
         self._state_poll_inflight = False
@@ -135,9 +131,7 @@ class TUI(App):
         self._bottom_height_override: int | None = None
         self._log_visible = True
         self._demand_visible = True
-        self._view_only = bool(
-            bot_manager and getattr(bot_manager, "view_only", False)
-        )
+        self._view_only = bool(bot_manager and getattr(bot_manager, "view_only", False))
         if self._view_only:
             self._demand_visible = False
         self._register_custom_themes()
@@ -171,32 +165,26 @@ class TUI(App):
     def compose(self) -> ComposeResult:
         """Create child widgets."""
         yield Header(show_clock=True)
-        
-        # Determine actual names if manager is available
-        names = self.default_names
+
         skins = self.default_skins
-        
-        if self.bot_manager and getattr(self.bot_manager, "roster", None):
-            roster_names = [c.name for c in self.bot_manager.roster.get_all_characters()]
-            if roster_names:
-                names = roster_names[:5]
 
         with Container(id="main-container"):
             with Grid(id="top-section"):
                 show_queue = not self._view_only
                 card_classes = "view-only" if self._view_only else ""
-                for i in range(len(names)):
+                for i in range(5):
+                    slot_name = f"Slot {i + 1}"
                     card = CharacterCard(
-                        character_name=names[i],
+                        character_name=slot_name,
                         skin_id=skins[i] if i < len(skins) else "men1",
                         show_queue=show_queue,
                         id=f"card-{i}",
                         classes=card_classes,
                     )
                     self.cards.append(card)
-                    self.cards_by_name[names[i]] = card
+                    self.cards_by_name[slot_name] = card
                     yield card
-            
+
             with Container(id="bottom-section"):
                 yield LogConsole(id="system-log")
                 yield CraftingDemandPanel(id="demand-panel")
@@ -214,16 +202,16 @@ class TUI(App):
         self._apply_demand_visibility()
         self._apply_bottom_visibility()
         self._apply_bottom_height()
-        
+
         # Start state polling (fallback for sparse events)
         self.set_interval(self.STATE_POLL_INTERVAL, self.poll_bot_states)
         if not self._view_only:
             self.set_interval(self.DEMAND_POLL_INTERVAL, self.poll_swarm_demand)
-        
+
         # Start log polling for client mode (server mode uses direct listener)
-        if hasattr(self.bot_manager, 'poll_logs'):
+        if hasattr(self.bot_manager, "poll_logs"):
             self.set_interval(self.LOG_POLL_INTERVAL, self.poll_logs)
-        
+
         self.log_widget.log_event("SYSTEM INITIALIZED. SCANNING SWARM...", "info")
         self.log_widget.log_event("DASHBOARD V6.0.0 ACTIVE.", "info")
         self.log_widget.log_event(f"THEME ACTIVE: {self.theme}", "info")
@@ -231,12 +219,18 @@ class TUI(App):
         if self.bot_manager:
             self.bot_manager.add_log_listener(self.on_bot_log)
             self.bot_manager.add_state_listener(self.on_bot_state)
-            mode_label = "VIEW-ONLY (Official API)" if self._view_only else "BOT MANAGER"
+            mode_label = (
+                "VIEW-ONLY (Official API)" if self._view_only else "BOT MANAGER"
+            )
             self.log_widget.log_event(f"CONNECTED: {mode_label}. SYNCING...", "success")
 
     def _is_remote_client_mode(self) -> bool:
         """True when manager is HTTP client backed (blocking network calls)."""
-        return bool(self.bot_manager and hasattr(self.bot_manager, "client") and hasattr(self.bot_manager, "base_url"))
+        return bool(
+            self.bot_manager
+            and hasattr(self.bot_manager, "client")
+            and hasattr(self.bot_manager, "base_url")
+        )
 
     async def poll_bot_states(self) -> None:
         """Force a state refresh from the manager."""
@@ -252,7 +246,7 @@ class TUI(App):
 
             for summary in summaries:
                 name = summary.get("name")
-                card = self.cards_by_name.get(str(name))
+                card = self._get_or_assign_card(name)
                 if card is not None:
                     card.update_from_state(summary)
         except Exception:
@@ -264,7 +258,7 @@ class TUI(App):
         """Poll logs from the server (client mode only)."""
         if (
             not self.bot_manager
-            or not hasattr(self.bot_manager, 'poll_logs')
+            or not hasattr(self.bot_manager, "poll_logs")
             or self._logs_poll_inflight
         ):
             return
@@ -290,7 +284,9 @@ class TUI(App):
             if isinstance(snapshot, dict):
                 self.demand_widget.update_from_snapshot(snapshot)
 
-        if not self.bot_manager or not hasattr(self.bot_manager, "get_swarm_demand_snapshot"):
+        if not self.bot_manager or not hasattr(
+            self.bot_manager, "get_swarm_demand_snapshot"
+        ):
             self._demand_poll_inflight = False
             return
 
@@ -329,23 +325,38 @@ class TUI(App):
         finally:
             self._demand_poll_inflight = False
 
+    def _get_or_assign_card(self, character_name: str | None) -> CharacterCard | None:
+        """Find the card for this character or assign an empty slot."""
+        if not character_name or character_name == "System":
+            return None
+        card = self.cards_by_name.get(str(character_name))
+        if card is None:
+            for c in self.cards:
+                if c.character_name.startswith("Slot "):
+                    card = c
+                    if c.character_name in self.cards_by_name:
+                        del self.cards_by_name[c.character_name]
+                    card.character_name = str(character_name)
+                    self.cards_by_name[str(character_name)] = card
+                    break
+        return card
+
     def on_bot_log(self, character_name: str, message: str, level: str) -> None:
         """Handle real log events."""
         if not hasattr(self, "log_widget") or self.log_widget is None:
             return
         self.log_widget.log_event(f"[{character_name}] {message}", level)
         clean_message = str(message or "").strip()
-        for card in self.cards:
-            if card.character_name == character_name:
-                if clean_message:
-                    card.last_msg = clean_message
-                break
+        card = self._get_or_assign_card(character_name)
+        if card is not None and clean_message:
+            card.last_msg = clean_message
 
     def on_bot_state(self, bot: Any) -> None:
         """Handle real state changes."""
         # Find matching card and update
         summary = bot.get_summary()
-        card = self.cards_by_name.get(str(bot.character_name))
+        name = summary.get("name", getattr(bot, "character_name", None))
+        card = self._get_or_assign_card(name)
         if card is not None:
             card.update_from_state(summary)
 
@@ -407,7 +418,9 @@ class TUI(App):
 
     def action_cycle_layout(self) -> None:
         """Cycle between readability-focused dashboard layouts."""
-        self.layout_mode_index = (self.layout_mode_index + 1) % len(self._available_layouts)
+        self.layout_mode_index = (self.layout_mode_index + 1) % len(
+            self._available_layouts
+        )
         self._apply_layout_mode()
 
     def _current_layout_key(self) -> str:
@@ -630,6 +643,7 @@ class TUI(App):
         self._apply_bottom_height()
         if self._current_layout_key() == "auto":
             self._apply_responsive_grid()
+
 
 if __name__ == "__main__":
     app = TUI()
